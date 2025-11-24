@@ -56,22 +56,40 @@ jobs:
     - name: 检查目标平台支持
       run: |
         cd openwrt
+        echo "Checking available platforms..."
+        ls -la target/linux/ | grep -E 'ipq|qualcomm'
+        
         if [ ! -d "target/linux/ipq60xx" ]; then
-          echo "⚠️ iStoreOS 不支持 ipq60xx，尝试添加支持..."
-          git clone --depth 1 https://github.com/openwrt/openwrt.git -b openwrt-23.05 /tmp/openwrt-official
-          if [ -d "/tmp/openwrt-official/target/linux/ipq60xx" ]; then
-            cp -r /tmp/openwrt-official/target/linux/ipq60xx target/linux/
-            echo "✓ 已从官方 OpenWrt 复制 ipq60xx 支持"
+          echo "⚠️ iStoreOS does not support ipq60xx, using QWRT config..."
+          
+          # Clone QWRT repository for IPQ60xx support
+          git clone --depth 1 https://github.com/qwrt/qwrt.git -b main /tmp/qwrt
+          
+          if [ -d "/tmp/qwrt/target/linux/ipq60xx" ]; then
+            echo "✓ Found ipq60xx in QWRT, copying..."
+            cp -r /tmp/qwrt/target/linux/ipq60xx target/linux/
+            
+            # Also copy device files if exists
+            if [ -d "/tmp/qwrt/package/firmware" ]; then
+              mkdir -p package/firmware
+              cp -r /tmp/qwrt/package/firmware/* package/firmware/ 2>/dev/null || true
+            fi
+            
+            echo "✓ Successfully copied QWRT ipq60xx platform support"
           else
-            echo "❌ 官方 OpenWrt 也不支持 ipq60xx，尝试 ImmortalWrt..."
-            git clone --depth 1 https://github.com/immortalwrt/immortalwrt.git -b openwrt-23.05 /tmp/immortalwrt
-            if [ -d "/tmp/immortalwrt/target/linux/ipq60xx" ]; then
-              cp -r /tmp/immortalwrt/target/linux/ipq60xx target/linux/
-              echo "✓ 已从 ImmortalWrt 复制 ipq60xx 支持"
+            echo "❌ ipq60xx not found in QWRT, trying alternative..."
+            
+            # Try OpenWrt qualcommax as fallback
+            git clone --depth 1 https://github.com/openwrt/openwrt.git -b main /tmp/openwrt-main
+            if [ -d "/tmp/openwrt-main/target/linux/qualcommax" ]; then
+              cp -r /tmp/openwrt-main/target/linux/qualcommax target/linux/
+              echo "✓ Copied qualcommax platform as fallback"
             fi
           fi
         fi
-        ls -la target/linux/ | grep ipq
+        
+        echo "Final platform check:"
+        ls -la target/linux/ | grep -E 'ipq|qualcomm'
 
     - name: 更新 feeds
       run: cd openwrt && ./scripts/feeds update -a

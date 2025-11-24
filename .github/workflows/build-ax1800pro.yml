@@ -60,31 +60,25 @@ jobs:
         ls -la target/linux/ | grep -E 'ipq|qualcomm'
         
         if [ ! -d "target/linux/ipq60xx" ]; then
-          echo "⚠️ iStoreOS does not support ipq60xx, using QWRT config..."
+          echo "⚠️ iStoreOS does not support ipq60xx, using OpenWrt-IPQ60xx config..."
           
-          # Clone QWRT repository for IPQ60xx support
-          git clone --depth 1 https://github.com/qwrt/qwrt.git -b main /tmp/qwrt
+          # Clone OpenWrt-IPQ60xx repository
+          git clone --depth 1 https://github.com/openwrt-ipq60xx/openwrt-legacy.git /tmp/openwrt-ipq60xx
           
-          if [ -d "/tmp/qwrt/target/linux/ipq60xx" ]; then
-            echo "✓ Found ipq60xx in QWRT, copying..."
-            cp -r /tmp/qwrt/target/linux/ipq60xx target/linux/
+          if [ -d "/tmp/openwrt-ipq60xx/target/linux/ipq60xx" ]; then
+            echo "✓ Found ipq60xx platform, copying..."
+            cp -r /tmp/openwrt-ipq60xx/target/linux/ipq60xx target/linux/
             
-            # Also copy device files if exists
-            if [ -d "/tmp/qwrt/package/firmware" ]; then
+            # Copy device packages if exists
+            if [ -d "/tmp/openwrt-ipq60xx/package/firmware/ipq-wifi" ]; then
               mkdir -p package/firmware
-              cp -r /tmp/qwrt/package/firmware/* package/firmware/ 2>/dev/null || true
+              cp -r /tmp/openwrt-ipq60xx/package/firmware/ipq-wifi package/firmware/ 2>/dev/null || true
             fi
             
-            echo "✓ Successfully copied QWRT ipq60xx platform support"
+            echo "✓ Successfully copied ipq60xx platform support"
           else
-            echo "❌ ipq60xx not found in QWRT, trying alternative..."
-            
-            # Try OpenWrt qualcommax as fallback
-            git clone --depth 1 https://github.com/openwrt/openwrt.git -b main /tmp/openwrt-main
-            if [ -d "/tmp/openwrt-main/target/linux/qualcommax" ]; then
-              cp -r /tmp/openwrt-main/target/linux/qualcommax target/linux/
-              echo "✓ Copied qualcommax platform as fallback"
-            fi
+            echo "❌ ipq60xx not found, listing available platforms..."
+            ls -1 /tmp/openwrt-ipq60xx/target/linux/
           fi
         fi
         

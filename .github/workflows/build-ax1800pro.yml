@@ -82,51 +82,46 @@ jobs:
     - name: 生成配置文件
       run: |
         cd openwrt
-        
-        # 检查是否支持 ipq60xx
         if [ -d "target/linux/ipq60xx" ]; then
-          echo "✓ 使用 ipq60xx 配置"
-          cat > .config <<EOF
-CONFIG_TARGET_ipq60xx=y
-CONFIG_TARGET_ipq60xx_generic=y
-CONFIG_TARGET_ipq60xx_generic_DEVICE_jdcloud_ax1800-pro=y
-EOF
+          echo "Use ipq60xx config"
+          cat > .config <<'EOFCONFIG'
+        CONFIG_TARGET_ipq60xx=y
+        CONFIG_TARGET_ipq60xx_generic=y
+        CONFIG_TARGET_ipq60xx_generic_DEVICE_jdcloud_ax1800-pro=y
+        EOFCONFIG
         elif [ -d "target/linux/qualcommax" ]; then
-          echo "⚠️ 使用 qualcommax 配置（ipq6018 可能在此）"
-          cat > .config <<EOF
-CONFIG_TARGET_qualcommax=y
-CONFIG_TARGET_qualcommax_ipq60xx=y
-EOF
+          echo "Use qualcommax config"
+          cat > .config <<'EOFCONFIG'
+        CONFIG_TARGET_qualcommax=y
+        CONFIG_TARGET_qualcommax_ipq60xx=y
+        EOFCONFIG
         else
-          echo "❌ 未找到支持的目标平台"
-          echo "可用平台："
+          echo "No supported platform found"
           ls -1 target/linux/
           exit 1
         fi
-        
-        # 添加 iStoreOS 特色应用
-        cat >> .config <<EOF
-CONFIG_PACKAGE_luci=y
-CONFIG_PACKAGE_luci-ssl-openssl=y
-CONFIG_PACKAGE_luci-app-store=y
-CONFIG_PACKAGE_luci-app-quickstart=y
-CONFIG_PACKAGE_luci-app-istorex=y
-CONFIG_PACKAGE_luci-app-diskman=y
-CONFIG_PACKAGE_luci-app-samba4=y
-CONFIG_PACKAGE_luci-app-aria2=y
-CONFIG_PACKAGE_luci-app-ddns=y
-CONFIG_PACKAGE_luci-app-upnp=y
-CONFIG_PACKAGE_luci-app-turboacc=y
-CONFIG_PACKAGE_luci-app-firewall=y
-CONFIG_PACKAGE_luci-app-ttyd=y
-CONFIG_PACKAGE_luci-theme-argon=y
-CONFIG_PACKAGE_wget-ssl=y
-CONFIG_PACKAGE_curl=y
-CONFIG_PACKAGE_htop=y
-CONFIG_PACKAGE_nano=y
-CONFIG_PACKAGE_kmod-usb-storage=y
-CONFIG_PACKAGE_kmod-fs-ext4=y
-EOF
+        cat >> .config <<'EOFCONFIG'
+        CONFIG_PACKAGE_luci=y
+        CONFIG_PACKAGE_luci-ssl-openssl=y
+        CONFIG_PACKAGE_luci-app-store=y
+        CONFIG_PACKAGE_luci-app-quickstart=y
+        CONFIG_PACKAGE_luci-app-istorex=y
+        CONFIG_PACKAGE_luci-app-diskman=y
+        CONFIG_PACKAGE_luci-app-samba4=y
+        CONFIG_PACKAGE_luci-app-aria2=y
+        CONFIG_PACKAGE_luci-app-ddns=y
+        CONFIG_PACKAGE_luci-app-upnp=y
+        CONFIG_PACKAGE_luci-app-turboacc=y
+        CONFIG_PACKAGE_luci-app-firewall=y
+        CONFIG_PACKAGE_luci-app-ttyd=y
+        CONFIG_PACKAGE_luci-theme-argon=y
+        CONFIG_PACKAGE_wget-ssl=y
+        CONFIG_PACKAGE_curl=y
+        CONFIG_PACKAGE_htop=y
+        CONFIG_PACKAGE_nano=y
+        CONFIG_PACKAGE_kmod-usb-storage=y
+        CONFIG_PACKAGE_kmod-fs-ext4=y
+        EOFCONFIG
 
     - name: 下载编译依赖
       run: |

@@ -60,25 +60,49 @@ jobs:
         ls -la target/linux/ | grep -E 'ipq|qualcomm'
         
         if [ ! -d "target/linux/ipq60xx" ]; then
-          echo "⚠️ iStoreOS does not support ipq60xx, using OpenWrt-IPQ60xx config..."
+          echo "⚠️ Adding ipq60xx support from QWRT sources..."
           
-          # Clone OpenWrt-IPQ60xx repository
-          git clone --depth 1 https://github.com/openwrt-ipq60xx/openwrt-legacy.git /tmp/openwrt-ipq60xx
+          # Download QWRT firmware to extract device tree
+          echo "Downloading QWRT firmware for reference..."
+          wget -q https://github.com/qwrt/qwrt/releases/download/v25.09.09/QWRT-R25.09.09-ipq60xx-generic-jdcloud_ax1800-pro-squashfs-factory.bin -O /tmp/qwrt-reference.bin || true
           
-          if [ -d "/tmp/openwrt-ipq60xx/target/linux/ipq60xx" ]; then
+          # Clone QWRT source for ipq60xx platform
+          echo "Cloning QWRT repository..."
+          if git clone --depth 1 https://github.com/breeze303/ipq60xx-6.6-wifi.git /tmp/qwrt-ipq60xx 2>/dev/null; then
+            echo "✓ Successfully cloned ipq60xx-6.6-wifi repository"
+          elif git clone --depth 1 https://github.com/AgustinLorenzo/openwrt.git -b ipq60xx /tmp/qwrt-ipq60xx 2>/dev/null; then
+            echo "✓ Successfully cloned AgustinLorenzo/openwrt ipq60xx branch"
+          elif git clone --depth 1 https://github.com/robimarko/openwrt.git -b ipq807x-5.15-pr /tmp/qwrt-ipq60xx 2>/dev/null; then
+            echo "✓ Successfully cloned robimarko/openwrt repository"
+          else
+            echo "❌ Failed to clone any QWRT repository"
+          fi
+          
+          # Copy ipq60xx platform files
+          if [ -d "/tmp/qwrt-ipq60xx/target/linux/ipq60xx" ]; then
             echo "✓ Found ipq60xx platform, copying..."
-            cp -r /tmp/openwrt-ipq60xx/target/linux/ipq60xx target/linux/
+            cp -r /tmp/qwrt-ipq60xx/target/linux/ipq60xx target/linux/
             
-            # Copy device packages if exists
-            if [ -d "/tmp/openwrt-ipq60xx/package/firmware/ipq-wifi" ]; then
+            # Copy WiFi firmware
+            if [ -d "/tmp/qwrt-ipq60xx/package/firmware/ipq-wifi" ]; then
               mkdir -p package/firmware
-              cp -r /tmp/openwrt-ipq60xx/package/firmware/ipq-wifi package/firmware/ 2>/dev/null || true
+              cp -r /tmp/qwrt-ipq60xx/package/firmware/ipq-wifi package/firmware/
+              echo "✓ Copied WiFi firmware packages"
             fi
             
-            echo "✓ Successfully copied ipq60xx platform support"
+            # Copy device-specific packages if exist
+            if [ -d "/tmp/qwrt-ipq60xx/package/boot/uboot-envtools" ]; then
+              mkdir -p package/boot
+              cp -r /tmp/qwrt-ipq60xx/package/boot/uboot-envtools package/boot/ 2>/dev/null || true
+            fi
+            
+            echo "✓ Successfully added ipq60xx platform from QWRT"
+            
+            # List available devices
+            echo "Available devices in ipq60xx platform:"
+            find target/linux/ipq60xx -name "*.mk" -o -name "*.dts" | head -20
           else
-            echo "❌ ipq60xx not found, listing available platforms..."
-            ls -1 /tmp/openwrt-ipq60xx/target/linux/
+            echo "⚠️ ipq60xx platform not found, will use qualcommax"
           fi
         fi
         
@@ -237,3 +261,4 @@ EOFCONFIG
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
